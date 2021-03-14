@@ -1,2 +1,2 @@
 # e41Decompress
-GM BCM file (de)compression tool 
+GM BCM file compression tool 
