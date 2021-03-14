@@ -42,6 +42,7 @@
             this.txtExtension = new System.Windows.Forms.TextBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.btnAbout = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -50,7 +51,7 @@
             // 
             this.btnOpenFile.Location = new System.Drawing.Point(11, 6);
             this.btnOpenFile.Name = "btnOpenFile";
-            this.btnOpenFile.Size = new System.Drawing.Size(129, 23);
+            this.btnOpenFile.Size = new System.Drawing.Size(77, 23);
             this.btnOpenFile.TabIndex = 0;
             this.btnOpenFile.Text = "Extract";
             this.btnOpenFile.UseVisualStyleBackColor = true;
@@ -80,9 +81,9 @@
             // 
             // btnCompress
             // 
-            this.btnCompress.Location = new System.Drawing.Point(146, 6);
+            this.btnCompress.Location = new System.Drawing.Point(94, 6);
             this.btnCompress.Name = "btnCompress";
-            this.btnCompress.Size = new System.Drawing.Size(128, 23);
+            this.btnCompress.Size = new System.Drawing.Size(72, 23);
             this.btnCompress.TabIndex = 3;
             this.btnCompress.Text = "Compress";
             this.btnCompress.UseVisualStyleBackColor = true;
@@ -103,14 +104,15 @@
             this.groupBox1.Controls.Add(this.radioType1);
             this.groupBox1.Location = new System.Drawing.Point(297, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(190, 29);
+            this.groupBox1.Size = new System.Drawing.Size(190, 42);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Save with header";
             // 
             // radioType2
             // 
             this.radioType2.AutoSize = true;
-            this.radioType2.Location = new System.Drawing.Point(67, 9);
+            this.radioType2.Location = new System.Drawing.Point(69, 19);
             this.radioType2.Name = "radioType2";
             this.radioType2.Size = new System.Drawing.Size(55, 17);
             this.radioType2.TabIndex = 2;
@@ -121,7 +123,7 @@
             // radioType3
             // 
             this.radioType3.AutoSize = true;
-            this.radioType3.Location = new System.Drawing.Point(128, 9);
+            this.radioType3.Location = new System.Drawing.Point(130, 19);
             this.radioType3.Name = "radioType3";
             this.radioType3.Size = new System.Drawing.Size(55, 17);
             this.radioType3.TabIndex = 1;
@@ -132,7 +134,7 @@
             // 
             this.radioType1.AutoSize = true;
             this.radioType1.Checked = true;
-            this.radioType1.Location = new System.Drawing.Point(6, 9);
+            this.radioType1.Location = new System.Drawing.Point(8, 19);
             this.radioType1.Name = "radioType1";
             this.radioType1.Size = new System.Drawing.Size(55, 17);
             this.radioType1.TabIndex = 0;
@@ -191,11 +193,22 @@
             this.label2.TabIndex = 9;
             this.label2.Text = "Rename files when saving:";
             // 
+            // btnAbout
+            // 
+            this.btnAbout.Location = new System.Drawing.Point(194, 6);
+            this.btnAbout.Name = "btnAbout";
+            this.btnAbout.Size = new System.Drawing.Size(75, 23);
+            this.btnAbout.TabIndex = 10;
+            this.btnAbout.Text = "About";
+            this.btnAbout.UseVisualStyleBackColor = true;
+            this.btnAbout.Click += new System.EventHandler(this.btnAbout_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(574, 450);
+            this.Controls.Add(this.btnAbout);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.btnCompress);
@@ -229,6 +242,7 @@
         private System.Windows.Forms.TextBox txtExtension;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Button btnAbout;
     }
 }
 

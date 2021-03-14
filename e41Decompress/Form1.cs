@@ -435,5 +435,11 @@ namespace e41Decompress
             }
 
         }
+
+        private void btnAbout_Click(object sender, EventArgs e)
+        {
+            AboutBox1 ab = new AboutBox1();
+            ab.Show(this);
+        }
     }
 }
