@@ -34,6 +34,7 @@
             this.btnCompress = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.radioType4 = new System.Windows.Forms.RadioButton();
             this.radioType2 = new System.Windows.Forms.RadioButton();
             this.radioType3 = new System.Windows.Forms.RadioButton();
             this.radioType1 = new System.Windows.Forms.RadioButton();
@@ -43,6 +44,7 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.label2 = new System.Windows.Forms.Label();
             this.btnAbout = new System.Windows.Forms.Button();
+            this.chkLzma = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -59,7 +61,7 @@
             // 
             // btnSaveFile
             // 
-            this.btnSaveFile.Location = new System.Drawing.Point(493, 6);
+            this.btnSaveFile.Location = new System.Drawing.Point(568, 6);
             this.btnSaveFile.Name = "btnSaveFile";
             this.btnSaveFile.Size = new System.Drawing.Size(73, 23);
             this.btnSaveFile.TabIndex = 1;
@@ -73,9 +75,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.txtResult.HideSelection = false;
-            this.txtResult.Location = new System.Drawing.Point(1, 80);
+            this.txtResult.Location = new System.Drawing.Point(1, 100);
             this.txtResult.Name = "txtResult";
-            this.txtResult.Size = new System.Drawing.Size(572, 369);
+            this.txtResult.Size = new System.Drawing.Size(644, 349);
             this.txtResult.TabIndex = 2;
             this.txtResult.Text = "";
             // 
@@ -99,15 +101,27 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.radioType4);
             this.groupBox1.Controls.Add(this.radioType2);
             this.groupBox1.Controls.Add(this.radioType3);
             this.groupBox1.Controls.Add(this.radioType1);
             this.groupBox1.Location = new System.Drawing.Point(297, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(190, 42);
+            this.groupBox1.Size = new System.Drawing.Size(265, 42);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Save with header";
+            // 
+            // radioType4
+            // 
+            this.radioType4.AutoSize = true;
+            this.radioType4.Location = new System.Drawing.Point(191, 19);
+            this.radioType4.Name = "radioType4";
+            this.radioType4.Size = new System.Drawing.Size(55, 17);
+            this.radioType4.TabIndex = 3;
+            this.radioType4.TabStop = true;
+            this.radioType4.Text = "Type4";
+            this.radioType4.UseVisualStyleBackColor = true;
             // 
             // radioType2
             // 
@@ -177,7 +191,7 @@
             this.groupBox2.Controls.Add(this.btnMultiCompress);
             this.groupBox2.Controls.Add(this.btnMultiExtract);
             this.groupBox2.Controls.Add(this.txtExtension);
-            this.groupBox2.Location = new System.Drawing.Point(11, 37);
+            this.groupBox2.Location = new System.Drawing.Point(7, 54);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(555, 43);
             this.groupBox2.TabIndex = 9;
@@ -203,11 +217,22 @@
             this.btnAbout.UseVisualStyleBackColor = true;
             this.btnAbout.Click += new System.EventHandler(this.btnAbout_Click);
             // 
+            // chkLzma
+            // 
+            this.chkLzma.AutoSize = true;
+            this.chkLzma.Location = new System.Drawing.Point(94, 35);
+            this.chkLzma.Name = "chkLzma";
+            this.chkLzma.Size = new System.Drawing.Size(94, 17);
+            this.chkLzma.TabIndex = 11;
+            this.chkLzma.Text = "LZMA (Type4)";
+            this.chkLzma.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(574, 450);
+            this.ClientSize = new System.Drawing.Size(646, 450);
+            this.Controls.Add(this.chkLzma);
             this.Controls.Add(this.btnAbout);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
@@ -223,6 +248,7 @@
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -243,6 +269,8 @@
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button btnAbout;
+        private System.Windows.Forms.CheckBox chkLzma;
+        private System.Windows.Forms.RadioButton radioType4;
     }
 }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SevenZip;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -53,6 +54,13 @@ namespace e41Decompress
 
         private void compress()
         {
+            if (chkLzma.Checked)
+            {
+                //byte[] tmpBuf = new byte[buf.Length - 20];
+                //Array.Copy(buf, 0, tmpBuf, 20, tmpBuf.Length);
+                newBuf = CompressLZMA(buf).ToList();
+                return;
+            }
             uint addr = 0;
             List<byte> singles = new List<byte>();
             newBuf = new List<byte>();
@@ -203,7 +211,10 @@ namespace e41Decompress
             }
             else if (buf[0] == 0x04 && buf[1] == 0x02)
             {
-                Logger("Type 4, currently unsupported");
+                Logger("Type 4 (LZMA)");
+                byte[] tmpBuf = new byte[buf.Length - 20];
+                Array.Copy(buf, 20, tmpBuf, 0, tmpBuf.Length);
+                newBuf = DecompressLZMA(tmpBuf).ToList();
                 return;
             }
             else
@@ -285,28 +296,26 @@ namespace e41Decompress
 
                 if (compression)
                 {
-                    byte[] headerType3 = { 0x04, 0x01, 0x00, 0x00 };
                     byte[] headerType1 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00 };
                     byte[] headerType2 = { 0x04, 0x01, 0x00, 0x00 };
+                    byte[] headerType3 = { 0x04, 0x01, 0x00, 0x00 };
+                    byte[] header1Type4 = { 0x04, 0x02, 0x00, 0x00 };
+                    byte[] header2Type4 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01 };
+                    //Note for Type4: header2Type4 length = headerType1.length
                     byte[] bytesFollow1 = BitConverter.GetBytes((uint)(newBuf.Count + headerType1.Length + 4));
                     Array.Reverse(bytesFollow1, 0, 4);
                     byte[] bytesFollow2 = BitConverter.GetBytes((uint)(newBuf.Count));
                     Array.Reverse(bytesFollow2, 0, 4);
 
-                    int headersize = headerType1.Length + 4;
-                    if (radioType3.Checked)
-                        headersize = headersize + headerType3.Length + 4;
+                    int headersize = headerType1.Length + 4; 
                     if (radioType2.Checked)
                         headersize = headerType2.Length + 4;
+                    else if (radioType3.Checked)
+                        headersize = headersize + headerType3.Length + 4;
+                    else if (radioType4.Checked)
+                        headersize = header1Type4.Length + 4 + header2Type4.Length + 4;
 
                     writeBuf = new byte[newBuf.Count + headersize];
-                    if (radioType3.Checked)
-                    {
-                        Array.Copy(headerType3, 0, writeBuf, 0, headerType3.Length);
-                        offset = headerType3.Length;
-                        Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
-                        offset += 4;
-                    }
                     if (radioType1.Checked || radioType3.Checked)
                     {
                         Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
@@ -314,7 +323,7 @@ namespace e41Decompress
                         Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
                         offset += 4;
                     }
-                    if (radioType2.Checked)
+                    else if (radioType2.Checked)
                     {
                         offset = 0;
                         Array.Copy(headerType2, 0, writeBuf, offset, headerType2.Length);
@@ -323,11 +332,29 @@ namespace e41Decompress
                         offset += 4;
 
                     }
+                    else if (radioType3.Checked)
+                    {
+                        Array.Copy(headerType3, 0, writeBuf, 0, headerType3.Length);
+                        offset = headerType3.Length;
+                        Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
+                        offset += 4;
+                    }
+                    else if (radioType4.Checked)
+                    {
+                        offset = 0;
+                        Array.Copy(header1Type4, 0, writeBuf, offset, header1Type4.Length);
+                        offset += header1Type4.Length;
+                        Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
+                        offset += 4;
+                        Array.Copy(header2Type4, 0, writeBuf, offset, header2Type4.Length);
+                        offset += header2Type4.Length;
+                        Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
+                        offset += 4;
+                    }
 
                 }
 
-                for (int i = 0; i < newBuf.Count; i++)
-                    writeBuf[i + offset] = newBuf[i];
+                Array.Copy(newBuf.ToArray(), 0, writeBuf, offset, newBuf.Count);
                 WriteBinToFile(fName, writeBuf);
                 Logger(" [OK]");
             }
@@ -441,5 +468,78 @@ namespace e41Decompress
             AboutBox1 ab = new AboutBox1();
             ab.Show(this);
         }
+
+
+
+        public static byte[] CompressLZMA(byte[] toCompress)
+        {
+
+            int dictionary = 4096; //-d12 = 2^12, default: 128 * 1024;
+            bool eos = false;
+
+            CoderPropID[] propIDs =
+                    {
+                    CoderPropID.DictionarySize,
+                    CoderPropID.PosStateBits,
+                    CoderPropID.LitContextBits,
+                    CoderPropID.LitPosBits,
+                    CoderPropID.NumFastBytes,
+                    CoderPropID.MatchFinder,
+                    CoderPropID.EndMarker
+                };
+
+            object[] properties =
+                    {
+                    (System.Int32)dictionary,
+                    (System.Int32)2,
+                    (System.Int32)3,
+                    (System.Int32)0,
+                    (System.Int32)32, //fb32
+                    "BT4",
+                    eos
+                };
+
+            SevenZip.Compression.LZMA.Encoder coder = new SevenZip.Compression.LZMA.Encoder();
+
+            using (MemoryStream input = new MemoryStream(toCompress))
+            using (MemoryStream output = new MemoryStream())
+            {
+                coder.SetCoderProperties(propIDs, properties);
+                coder.WriteCoderProperties(output);
+
+                //Debug.WriteLine(BitConverter.ToString(output.ToArray()));
+
+                output.Write(BitConverter.GetBytes(input.Length), 0, 8);
+
+                coder.Code(input, output, input.Length, -1, null);
+                return output.ToArray();
+            }
+        }
+
+        public static byte[] DecompressLZMA(byte[] toDecompress)
+        {
+            SevenZip.Compression.LZMA.Decoder coder = new SevenZip.Compression.LZMA.Decoder();
+
+            using (MemoryStream input = new MemoryStream(toDecompress))
+            using (MemoryStream output = new MemoryStream())
+            {
+
+                // Read the decoder properties
+                byte[] properties = new byte[5];
+                input.Read(properties, 0, 5);
+
+
+                // Read in the decompress file size.
+                byte[] fileLengthBytes = new byte[8];
+                input.Read(fileLengthBytes, 0, 8);
+                long fileLength = BitConverter.ToInt64(fileLengthBytes, 0);
+
+                coder.SetDecoderProperties(properties);
+                coder.Code(input, output, input.Length, fileLength, null);
+
+                return output.ToArray();
+            }
+        }
     }
 }
+
