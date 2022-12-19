@@ -8,8 +8,10 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using static e41Decompress.Helpers;
+
 
 namespace e41Decompress
 {
@@ -25,6 +27,7 @@ namespace e41Decompress
         uint fsize;
         bool compression = false;
         string filetype = "";
+        string CurrentFile;
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -482,7 +485,25 @@ namespace e41Decompress
 
 
 
-        public static byte[] CompressLZMA(byte[] toCompress)
+        public byte[] CompressLZMA(byte[] toCompress)
+        {
+            string tmpFile = Path.Combine(Path.GetTempPath(), "e41decompress-lzma-tmp");
+            Process process = new Process();
+            // Configure the process using the StartInfo properties.
+            process.StartInfo.FileName = "lzma.exe";
+            process.StartInfo.Arguments = "e " + CurrentFile + " " + tmpFile + " -d12 -fb32";
+            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //process.StartInfo.UseShellExecute = false;
+
+            process.Start();
+            process.WaitForExit();
+            fsize = (uint)new FileInfo(tmpFile).Length;
+            byte[] readBuf = ReadBin(tmpFile, 0, fsize);
+            return readBuf;
+        }
+
+
+        public byte[] CompressLZMA_OLD(byte[] toCompress)
         {
 
             int dictionary = 4096; //-d12 = 2^12, default: 128 * 1024;
@@ -539,7 +560,7 @@ namespace e41Decompress
             }
         }
 
-        public static byte[] DecompressLZMA(byte[] toDecompress)
+        public byte[] DecompressLZMA(byte[] toDecompress)
         {
             SevenZip.Compression.LZMA.Decoder coder = new SevenZip.Compression.LZMA.Decoder();
 
@@ -571,6 +592,7 @@ namespace e41Decompress
                 string fName = SelectFile();
                 if (fName.Length == 0)
                     return;
+                CurrentFile = fName;
                 fsize = (uint)new FileInfo(fName).Length;
                 Logger("Reading file: " + fName, false);
                 buf = ReadBin(fName, 0, fsize);
