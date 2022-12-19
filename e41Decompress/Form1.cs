@@ -23,7 +23,7 @@ namespace e41Decompress
         }
 
         byte[] buf;
-        List<byte> newBuf;
+        byte[] newBuf;
         uint fsize;
         bool compression = false;
         string filetype = "";
@@ -57,14 +57,12 @@ namespace e41Decompress
         {
             if (radioType4.Checked)
             {
-                //byte[] tmpBuf = new byte[buf.Length - 20];
-                //Array.Copy(buf, 0, tmpBuf, 20, tmpBuf.Length);
-                newBuf = CompressLZMA(buf).ToList();
+                newBuf = CompressLZMA(buf);
                 return;
             }
             uint addr = 0;
             List<byte> singles = new List<byte>();
-            newBuf = new List<byte>();
+            List<byte> localBuf = new List<byte>();
             while (addr < fsize)
             {
                 //Search for repeating DWORD blocks:
@@ -123,9 +121,9 @@ namespace e41Decompress
                     //No patterns, store as single bytes
                     if (singles.Count >= 0x3f)
                     {
-                        newBuf.Add((byte)singles.Count);
+                        localBuf.Add((byte)singles.Count);
                         for (int s = 0; s < singles.Count; s++)
-                            newBuf.Add(singles[s]);
+                            localBuf.Add(singles[s]);
                         singles = new List<byte>();
                     }
                     singles.Add(buf[addr]);
@@ -136,9 +134,9 @@ namespace e41Decompress
                     //Pattern found, flush singles buffer
                     if (singles.Count > 0)
                     {
-                        newBuf.Add((byte)singles.Count);
+                        localBuf.Add((byte)singles.Count);
                         for (int s = 0; s < singles.Count; s++)
-                            newBuf.Add(singles[s]);
+                            localBuf.Add(singles[s]);
                         singles = new List<byte>();
                     }
                     //Select best method:
@@ -159,10 +157,10 @@ namespace e41Decompress
                         if (dwCounter > 63)
                             dwCounter = 63;
                         crawl = (byte)(0xC0 + dwCounter);
-                        newBuf.Add(crawl);
-                        Debug.WriteLine("Address: " + addr.ToString("X") + ", Found dwords: " + dwCounter.ToString() + ", Crawl: " + crawl.ToString("X") + ", writebuf: " + newBuf.Count);
+                        localBuf.Add(crawl);
+                        Debug.WriteLine("Address: " + addr.ToString("X") + ", Found dwords: " + dwCounter.ToString() + ", Crawl: " + crawl.ToString("X") + ", writebuf: " + localBuf.Count);
                         for (int b = 0; b < 4; b++)
-                            newBuf.Add(DWarray[b]);
+                            localBuf.Add(DWarray[b]);
                         addr += (uint)(4 * dwCounter);
 
                     }
@@ -171,10 +169,10 @@ namespace e41Decompress
                         if (wCounter > 63)
                             wCounter = 63;
                         crawl = (byte)(0x80 + wCounter);
-                        newBuf.Add(crawl);
-                        Debug.WriteLine("Address: " + addr.ToString("X") + ", Found words: " + wCounter.ToString() + ", Crawl: " + crawl.ToString("X") + ", writebuf: " + newBuf.Count);
-                        newBuf.Add(Warray[0]);
-                        newBuf.Add(Warray[1]);
+                        localBuf.Add(crawl);
+                        Debug.WriteLine("Address: " + addr.ToString("X") + ", Found words: " + wCounter.ToString() + ", Crawl: " + crawl.ToString("X") + ", writebuf: " + localBuf.Count);
+                        localBuf.Add(Warray[0]);
+                        localBuf.Add(Warray[1]);
                         addr += (uint)(2 * wCounter);
                     }
                     else //method == 1
@@ -182,14 +180,15 @@ namespace e41Decompress
                         if (bCounter > 63)
                             bCounter = 63;
                         crawl = (byte)(0x40 + bCounter);
-                        newBuf.Add(crawl);
-                        Debug.WriteLine("Address: " + addr.ToString("X") + ", Found bytes: " + bCounter.ToString() + ", Crawl: " + crawl.ToString("X") + ", writebuf: " + newBuf.Count);
-                        newBuf.Add(buf[addr]);
+                        localBuf.Add(crawl);
+                        Debug.WriteLine("Address: " + addr.ToString("X") + ", Found bytes: " + bCounter.ToString() + ", Crawl: " + crawl.ToString("X") + ", writebuf: " + localBuf.Count);
+                        localBuf.Add(buf[addr]);
                         addr += bCounter;
 
                     }
                 }
             }
+            newBuf = localBuf.ToArray();
         }
 
         private void uncompress()
@@ -219,7 +218,7 @@ namespace e41Decompress
                 Logger("Type 4 (LZMA)");
                 byte[] tmpBuf = new byte[buf.Length - 20];
                 Array.Copy(buf, 20, tmpBuf, 0, tmpBuf.Length);
-                newBuf = DecompressLZMA(tmpBuf).ToList();
+                newBuf = DecompressLZMA(tmpBuf);
                 return;
             }
             else
@@ -227,7 +226,7 @@ namespace e41Decompress
                 Logger("Unsupprted file, type: " + buf[0].ToString("X2") + " " + buf[1].ToString("X2") + " " + buf[2].ToString("X2") + " " + buf[3].ToString("X2")); ;
                 return;
             }
-            newBuf = new List<byte>();
+            List<byte> localBuf = new List<byte>();
             while (addr < fsize)
             {
                 byte crawl = buf[addr];
@@ -238,7 +237,7 @@ namespace e41Decompress
                     for (int a=0; a < count; a++)
                     {
                         for (int b = 0; b < 4; b++)
-                            newBuf.Add(buf[addr + b]);
+                            localBuf.Add(buf[addr + b]);
                     }
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying 4 bytes: " + count.ToString() + " times");
                     addr += 4;
@@ -248,8 +247,8 @@ namespace e41Decompress
                     int count = crawl - 0x80;
                     for (int a = 0; a < count; a++)
                     {
-                        newBuf.Add(buf[addr]);
-                        newBuf.Add(buf[addr + 1]);
+                        localBuf.Add(buf[addr]);
+                        localBuf.Add(buf[addr + 1]);
                     }
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying 2 bytes: " + count.ToString() + " times");
                     addr += 2;
@@ -259,20 +258,22 @@ namespace e41Decompress
                     int count = crawl - 0x40;
                     byte val = buf[addr];
                     for (int a = 0; a < count; a++)
-                        newBuf.Add(val);
+                        localBuf.Add(val);
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying 1 byte: " + count.ToString() + " times");
                     addr++;
                 }
                 else 
                 {
                     for (int a = 0; a < crawl; a++)
-                        newBuf.Add(buf[addr + a]);
+                        localBuf.Add(buf[addr + a]);
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying: " + crawl.ToString() + " bytes");
                     addr += (uint)(crawl);
                 }
                 //addr++;
             }
+            newBuf = localBuf.ToArray();
         }
+
         public void LoggerBold(string LogText, Boolean NewLine = true)
         {
             txtResult.SelectionFont = new Font(txtResult.Font, FontStyle.Bold);
@@ -296,7 +297,7 @@ namespace e41Decompress
             {
                 Logger("Saving to file: " + fName, false);
 
-                byte[] writeBuf = new byte[newBuf.Count];
+                byte[] writeBuf = new byte[newBuf.Length];
                 int offset = 0;
 
                 if (compression)
@@ -307,9 +308,9 @@ namespace e41Decompress
                     byte[] header1Type4 = { 0x04, 0x02, 0x00, 0x00 };
                     byte[] header2Type4 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01 };
                     //Note for Type4: header2Type4 length = headerType1.length
-                    byte[] bytesFollow1 = BitConverter.GetBytes((uint)(newBuf.Count + headerType1.Length + 4));
+                    byte[] bytesFollow1 = BitConverter.GetBytes((uint)(newBuf.Length + headerType1.Length + 4));
                     Array.Reverse(bytesFollow1, 0, 4);
-                    byte[] bytesFollow2 = BitConverter.GetBytes((uint)(newBuf.Count));
+                    byte[] bytesFollow2 = BitConverter.GetBytes((uint)(newBuf.Length));
                     Array.Reverse(bytesFollow2, 0, 4);
 
                     int headersize = headerType1.Length + 4; 
@@ -320,7 +321,7 @@ namespace e41Decompress
                     else if (radioType4.Checked)
                         headersize = header1Type4.Length + 4 + header2Type4.Length + 4;
 
-                    writeBuf = new byte[newBuf.Count + headersize];
+                    writeBuf = new byte[newBuf.Length + headersize];
                     if (radioType1.Checked)
                     {
                         Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
@@ -363,7 +364,7 @@ namespace e41Decompress
 
                 }
 
-                Array.Copy(newBuf.ToArray(), 0, writeBuf, offset, newBuf.Count);
+                Array.Copy(newBuf, 0, writeBuf, offset, newBuf.Length);
                 WriteBinToFile(fName, writeBuf);
                 Logger(" [OK]");
                 if (!compression && chkWriteTxt.Checked)
