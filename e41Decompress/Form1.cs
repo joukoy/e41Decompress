@@ -27,21 +27,40 @@ namespace e41Decompress
         uint fsize;
         bool compression = false;
         string filetype = "";
-        string CurrentFile;
 
         private void Form1_Load(object sender, EventArgs e)
         {
 
         }
 
-        private void btnOpenFile_Click(object sender, EventArgs e)
+        private void TestIntegrity(byte[] Original, byte[] UnCompressed)
+        {
+            Logger("Testing integrity...");
+            Application.DoEvents();
+            byte[] compressed = compress(UnCompressed);
+            byte[] cmpBuf = AddHeader(compressed);
+
+            if (Original.SequenceEqual(cmpBuf))
+            {
+                Logger(" [OK]");
+            }
+            else
+            {
+                LoggerBold("Warning! integrity test failed. Unknown compression method?");
+            }
+        }
+
+        private void btnExtract_Click(object sender, EventArgs e)
         {
             try
             {
                 Logger("Uncompressing...");
                 compression = false;
-                uncompress();
+                newBuf = uncompress(buf);
+                if (newBuf == null)
+                    return;
                 Logger("[OK]");
+                TestIntegrity(buf, newBuf);
                 string fName = SelectSaveFile();
                 if (fName.Length == 0)
                     return;
@@ -53,17 +72,16 @@ namespace e41Decompress
             }
         }
 
-        private void compress()
+        private byte[] compress(byte[] inBuf)
         {
             if (radioType4.Checked)
             {
-                newBuf = CompressLZMA(buf);
-                return;
+                return CompressLZMA(inBuf);
             }
             uint addr = 0;
             List<byte> singles = new List<byte>();
             List<byte> localBuf = new List<byte>();
-            while (addr < fsize)
+            while (addr < inBuf.Length)
             {
                 //Search for repeating DWORD blocks:
                 byte[] DWarray = new byte[4];
@@ -75,13 +93,13 @@ namespace e41Decompress
                 byte crawl = 0;
                 if (addr == 0x14fc)
                     Debug.WriteLine("");
-                if ((addr + 8) < fsize)
+                if ((addr + 8) < inBuf.Length)
                 {
-                    Array.Copy(buf, addr, DWarray, 0, 4);
-                    while ((addr2 + 8) < buf.Length && dwCounter < 65)
+                    Array.Copy(inBuf, addr, DWarray, 0, 4);
+                    while ((addr2 + 8) < inBuf.Length && dwCounter < 65)
                     {
                         addr2 += 4;
-                        Array.Copy(buf, addr2, nextBlock, 0, 4);
+                        Array.Copy(inBuf, addr2, nextBlock, 0, 4);
                         if (DWarray.SequenceEqual(nextBlock))
                             dwCounter++;
                         else
@@ -91,15 +109,15 @@ namespace e41Decompress
                 // Search for repeating WORDS
                 byte[] Warray = new byte[2];
                 nextBlock = new byte[2];
-                if ((addr + 4) < fsize)
+                if ((addr + 4) < inBuf.Length)
                 {
-                    Array.Copy(buf, addr, Warray, 0, 2);
+                    Array.Copy(inBuf, addr, Warray, 0, 2);
                     wCounter = 1;
                     addr2 = addr;
-                    while ((addr2 + 4) < buf.Length && wCounter < 65)
+                    while ((addr2 + 4) < inBuf.Length && wCounter < 65)
                     {
                         addr2 += 2;
-                        Array.Copy(buf, addr2, nextBlock, 0, 2);
+                        Array.Copy(inBuf, addr2, nextBlock, 0, 2);
                         if (Warray.SequenceEqual(nextBlock))
                             wCounter++;
                         else
@@ -110,7 +128,7 @@ namespace e41Decompress
                 //Search for repeating single bytes
                 bCounter = 1;
                 addr2 = addr + 1;
-                while (addr2 < buf.Length && buf[addr] == buf[addr2] && bCounter < 65)
+                while (addr2 < inBuf.Length && inBuf[addr] == inBuf[addr2] && bCounter < 65)
                 {
                     addr2++;
                     bCounter++;
@@ -126,7 +144,7 @@ namespace e41Decompress
                             localBuf.Add(singles[s]);
                         singles = new List<byte>();
                     }
-                    singles.Add(buf[addr]);
+                    singles.Add(inBuf[addr]);
                     addr++;
                 }
                 else
@@ -182,54 +200,57 @@ namespace e41Decompress
                         crawl = (byte)(0x40 + bCounter);
                         localBuf.Add(crawl);
                         Debug.WriteLine("Address: " + addr.ToString("X") + ", Found bytes: " + bCounter.ToString() + ", Crawl: " + crawl.ToString("X") + ", writebuf: " + localBuf.Count);
-                        localBuf.Add(buf[addr]);
+                        localBuf.Add(inBuf[addr]);
                         addr += bCounter;
 
                     }
                 }
             }
-            newBuf = localBuf.ToArray();
+            return localBuf.ToArray();
         }
 
-        private void uncompress()
+        private byte[] uncompress(byte[] inBuf)
         {
             uint addr = 20;
-            if (buf[0] == 0xFF && buf[1] == 0xFF && buf[2] == 0xFF && buf[3] == 0xFF)
+            if (inBuf[0] == 0xFF && inBuf[1] == 0xFF && inBuf[2] == 0xFF && inBuf[3] == 0xFF)
             {
+                radioType1.Checked = true;
                 filetype = "type1";
                 addr = 12;
                 Logger("Type 1");
             }
-            else if (buf[0] == 0x04 && buf[1] == 0x01 && buf[4] == 0)
+            else if (inBuf[0] == 0x04 && inBuf[1] == 0x01 && inBuf[4] == 0)
             {
+                radioType2.Checked = true;
                 filetype = "type2";
                 addr = 8;
                 Logger("Type 2");
             }
-            else if (buf[0] == 0x04 && buf[1] == 0x01 && buf[4] == 0xFF)
+            else if (inBuf[0] == 0x04 && inBuf[1] == 0x01 && inBuf[4] == 0xFF)
             {
+                radioType3.Checked = true;
                 filetype = "type3";
                 addr = 20;
                 Logger("Type 3");
             }
-            else if (buf[0] == 0x04 && buf[1] == 0x02)
+            else if (inBuf[0] == 0x04 && inBuf[1] == 0x02)
             {
+                radioType4.Checked = true;
                 filetype = "type4";
                 Logger("Type 4 (LZMA)");
-                byte[] tmpBuf = new byte[buf.Length - 20];
-                Array.Copy(buf, 20, tmpBuf, 0, tmpBuf.Length);
-                newBuf = DecompressLZMA(tmpBuf);
-                return;
+                byte[] tmpBuf = new byte[inBuf.Length - 20];
+                Array.Copy(inBuf, 20, tmpBuf, 0, tmpBuf.Length);
+                return DecompressLZMA(tmpBuf);
             }
             else
             {
-                Logger("Unsupprted file, type: " + buf[0].ToString("X2") + " " + buf[1].ToString("X2") + " " + buf[2].ToString("X2") + " " + buf[3].ToString("X2")); ;
-                return;
+                Logger("Unsupprted file, type: " + inBuf[0].ToString("X2") + " " + inBuf[1].ToString("X2") + " " + inBuf[2].ToString("X2") + " " + inBuf[3].ToString("X2")); ;
+                return null;
             }
             List<byte> localBuf = new List<byte>();
             while (addr < fsize)
             {
-                byte crawl = buf[addr];
+                byte crawl = inBuf[addr];
                 addr++;
                 if (crawl > 0xBF)
                 {
@@ -237,7 +258,7 @@ namespace e41Decompress
                     for (int a=0; a < count; a++)
                     {
                         for (int b = 0; b < 4; b++)
-                            localBuf.Add(buf[addr + b]);
+                            localBuf.Add(inBuf[addr + b]);
                     }
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying 4 bytes: " + count.ToString() + " times");
                     addr += 4;
@@ -247,8 +268,8 @@ namespace e41Decompress
                     int count = crawl - 0x80;
                     for (int a = 0; a < count; a++)
                     {
-                        localBuf.Add(buf[addr]);
-                        localBuf.Add(buf[addr + 1]);
+                        localBuf.Add(inBuf[addr]);
+                        localBuf.Add(inBuf[addr + 1]);
                     }
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying 2 bytes: " + count.ToString() + " times");
                     addr += 2;
@@ -256,7 +277,7 @@ namespace e41Decompress
                 else if (crawl > 0x3F)
                 {
                     int count = crawl - 0x40;
-                    byte val = buf[addr];
+                    byte val = inBuf[addr];
                     for (int a = 0; a < count; a++)
                         localBuf.Add(val);
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying 1 byte: " + count.ToString() + " times");
@@ -265,13 +286,13 @@ namespace e41Decompress
                 else 
                 {
                     for (int a = 0; a < crawl; a++)
-                        localBuf.Add(buf[addr + a]);
+                        localBuf.Add(inBuf[addr + a]);
                     Debug.WriteLine("Addr: " + addr.ToString("X") + ", Crawl: " + crawl.ToString("X") + ", Copying: " + crawl.ToString() + " bytes");
                     addr += (uint)(crawl);
                 }
                 //addr++;
             }
-            newBuf = localBuf.ToArray();
+            return localBuf.ToArray();
         }
 
         public void LoggerBold(string LogText, Boolean NewLine = true)
@@ -291,80 +312,100 @@ namespace e41Decompress
             Application.DoEvents();
         }
 
+        private byte[] AddHeader(byte[] inBuf)
+        {
+            try
+            {
+                if (inBuf == null)
+                    return null;
+                byte[] writeBuf;
+                int offset = 0;
+
+                byte[] headerType1 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00 };
+                byte[] headerType2 = { 0x04, 0x01, 0x00, 0x00 };
+                byte[] headerType3 = { 0x04, 0x01, 0x00, 0x00 };
+                byte[] header1Type4 = { 0x04, 0x02, 0x00, 0x00 };
+                byte[] header2Type4 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01 };
+                //Note for Type4: header2Type4 length = headerType1.length
+                byte[] bytesFollow1 = BitConverter.GetBytes((uint)(inBuf.Length + headerType1.Length + 4));
+                Array.Reverse(bytesFollow1, 0, 4);
+                byte[] bytesFollow2 = BitConverter.GetBytes((uint)(inBuf.Length));
+                Array.Reverse(bytesFollow2, 0, 4);
+
+                int headersize = headerType1.Length + 4;
+                if (radioType2.Checked)
+                    headersize = headerType2.Length + 4;
+                else if (radioType3.Checked)
+                    headersize = headersize + headerType3.Length + 4;
+                else if (radioType4.Checked)
+                    headersize = header1Type4.Length + 4 + header2Type4.Length + 4;
+
+                writeBuf = new byte[inBuf.Length + headersize];
+                if (radioType1.Checked)
+                {
+                    Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
+                    offset += headerType1.Length;
+                    Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
+                    offset += 4;
+                }
+                else if (radioType2.Checked)
+                {
+                    offset = 0;
+                    Array.Copy(headerType2, 0, writeBuf, offset, headerType2.Length);
+                    offset += headerType2.Length;
+                    Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
+                    offset += 4;
+
+                }
+                else if (radioType3.Checked)
+                {
+                    Array.Copy(headerType3, 0, writeBuf, 0, headerType3.Length);
+                    offset = headerType3.Length;
+                    Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
+                    offset += 4;
+                    Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
+                    offset += headerType1.Length;
+                    Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
+                    offset += 4;
+                }
+                else if (radioType4.Checked)
+                {
+                    offset = 0;
+                    Array.Copy(header1Type4, 0, writeBuf, offset, header1Type4.Length);
+                    offset += header1Type4.Length;
+                    Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
+                    offset += 4;
+                    Array.Copy(header2Type4, 0, writeBuf, offset, header2Type4.Length);
+                    offset += header2Type4.Length;
+                    Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
+                    offset += 4;
+                }
+                Array.Copy(inBuf, 0, writeBuf, offset, inBuf.Length);
+                return writeBuf;
+            }
+            catch (Exception ex)
+            {
+                var st = new StackTrace(ex, true);
+                // Get the top stack frame
+                var frame = st.GetFrame(st.FrameCount - 1);
+                // Get the line number from the stack frame
+                var line = frame.GetFileLineNumber();
+                LoggerBold(" Error, line " + line + ": " + ex.Message);
+            }
+            return null;
+        }
+
         void saveBin(string fName)
         {
             try
             {
                 Logger("Saving to file: " + fName, false);
 
-                byte[] writeBuf = new byte[newBuf.Length];
-                int offset = 0;
-
+                byte[] writeBuf;
                 if (compression)
-                {
-                    byte[] headerType1 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00 };
-                    byte[] headerType2 = { 0x04, 0x01, 0x00, 0x00 };
-                    byte[] headerType3 = { 0x04, 0x01, 0x00, 0x00 };
-                    byte[] header1Type4 = { 0x04, 0x02, 0x00, 0x00 };
-                    byte[] header2Type4 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01 };
-                    //Note for Type4: header2Type4 length = headerType1.length
-                    byte[] bytesFollow1 = BitConverter.GetBytes((uint)(newBuf.Length + headerType1.Length + 4));
-                    Array.Reverse(bytesFollow1, 0, 4);
-                    byte[] bytesFollow2 = BitConverter.GetBytes((uint)(newBuf.Length));
-                    Array.Reverse(bytesFollow2, 0, 4);
-
-                    int headersize = headerType1.Length + 4; 
-                    if (radioType2.Checked)
-                        headersize = headerType2.Length + 4;
-                    else if (radioType3.Checked)
-                        headersize = headersize + headerType3.Length + 4;
-                    else if (radioType4.Checked)
-                        headersize = header1Type4.Length + 4 + header2Type4.Length + 4;
-
-                    writeBuf = new byte[newBuf.Length + headersize];
-                    if (radioType1.Checked)
-                    {
-                        Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
-                        offset += headerType1.Length;
-                        Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
-                        offset += 4;
-                    }
-                    else if (radioType2.Checked)
-                    {
-                        offset = 0;
-                        Array.Copy(headerType2, 0, writeBuf, offset, headerType2.Length);
-                        offset += headerType2.Length;
-                        Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
-                        offset += 4;
-
-                    }
-                    else if (radioType3.Checked)
-                    {
-                        Array.Copy(headerType3, 0, writeBuf, 0, headerType3.Length);
-                        offset = headerType3.Length;
-                        Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
-                        offset += 4;
-                        Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
-                        offset += headerType1.Length;
-                        Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
-                        offset += 4;
-                    }
-                    else if (radioType4.Checked)
-                    {
-                        offset = 0;
-                        Array.Copy(header1Type4, 0, writeBuf, offset, header1Type4.Length);
-                        offset += header1Type4.Length;
-                        Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
-                        offset += 4;
-                        Array.Copy(header2Type4, 0, writeBuf, offset, header2Type4.Length);
-                        offset += header2Type4.Length;
-                        Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
-                        offset += 4;
-                    }
-
-                }
-
-                Array.Copy(newBuf, 0, writeBuf, offset, newBuf.Length);
+                    writeBuf = AddHeader(newBuf);
+                else
+                    writeBuf = newBuf;
                 WriteBinToFile(fName, writeBuf);
                 Logger(" [OK]");
                 if (!compression && chkWriteTxt.Checked)
@@ -396,7 +437,7 @@ namespace e41Decompress
                 Logger(" [OK]");
                 Logger("Compressing...");
                 compression = true;
-                compress();
+                newBuf = compress(buf);
                 Logger("[OK]");
                 string fName = SelectSaveFile();
                 if (fName.Length == 0)
@@ -428,7 +469,7 @@ namespace e41Decompress
                     buf = ReadBin(fName, 0, fsize);
                     Logger(" [OK]");
                     Logger("Compressing...");
-                    compress();
+                    newBuf = compress(buf);
                     Logger("[OK]");
                     string fPath = Path.GetDirectoryName(fName);
                     string baseName = Path.GetFileNameWithoutExtension(fName);
@@ -462,8 +503,9 @@ namespace e41Decompress
                     buf = ReadBin(fName, 0, fsize);
                     Logger(" [OK]");
                     Logger("Uncompressing...");
-                    uncompress();
+                    newBuf = uncompress(buf);
                     Logger("[OK]");
+                    TestIntegrity(buf, newBuf);
                     string fPath = Path.GetDirectoryName(fName);
                     string baseName = Path.GetFileNameWithoutExtension(fName);
                     string saveFname = Path.Combine(fPath, baseName + txtExtension.Text);
@@ -488,19 +530,42 @@ namespace e41Decompress
 
         public byte[] CompressLZMA(byte[] toCompress)
         {
-            string tmpFile = Path.Combine(Path.GetTempPath(), "e41decompress-lzma-tmp");
-            Process process = new Process();
-            // Configure the process using the StartInfo properties.
-            process.StartInfo.FileName = "lzma.exe";
-            process.StartInfo.Arguments = "e " + CurrentFile + " " + tmpFile + " -d12 -fb32";
-            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            //process.StartInfo.UseShellExecute = false;
+            try
+            {
+                string tmpFile1 = Path.Combine(Path.GetTempPath(), "e41decompress-lzma1.tmp");
+                string tmpFile2 = Path.Combine(Path.GetTempPath(), "e41decompress-lzma2.tmp");
+                WriteBinToFile(tmpFile1, toCompress);
+                Process process = new Process();
+                // Configure the process using the StartInfo properties.
+                string lzmaexe = Path.Combine(Application.StartupPath, "lzma.exe");
+                if (!File.Exists(lzmaexe))
+                {
+                    LoggerBold("File missing: " + lzmaexe);
+                    return null;
+                }
+                process.StartInfo.FileName = lzmaexe;
+                process.StartInfo.Arguments = "e " + tmpFile1 + " " + tmpFile2 + " -d12 -fb32";
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                //process.StartInfo.UseShellExecute = false;
 
-            process.Start();
-            process.WaitForExit();
-            fsize = (uint)new FileInfo(tmpFile).Length;
-            byte[] readBuf = ReadBin(tmpFile, 0, fsize);
-            return readBuf;
+                process.Start();
+                process.WaitForExit();
+                fsize = (uint)new FileInfo(tmpFile2).Length;
+                byte[] readBuf = ReadBin(tmpFile2, 0, fsize);
+                File.Delete(tmpFile1);
+                File.Delete(tmpFile2);
+                return readBuf;
+            }
+            catch (Exception ex)
+            {
+                var st = new StackTrace(ex, true);
+                // Get the top stack frame
+                var frame = st.GetFrame(st.FrameCount - 1);
+                // Get the line number from the stack frame
+                var line = frame.GetFileLineNumber();
+                LoggerBold(" Error, line " + line + ": " + ex.Message);
+            }
+            return null;
         }
 
 
@@ -593,7 +658,6 @@ namespace e41Decompress
                 string fName = SelectFile();
                 if (fName.Length == 0)
                     return;
-                CurrentFile = fName;
                 fsize = (uint)new FileInfo(fName).Length;
                 Logger("Reading file: " + fName, false);
                 buf = ReadBin(fName, 0, fsize);

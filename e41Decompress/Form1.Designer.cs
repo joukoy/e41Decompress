@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.btnOpenFile = new System.Windows.Forms.Button();
+            this.btnExtract = new System.Windows.Forms.Button();
             this.txtResult = new System.Windows.Forms.RichTextBox();
             this.btnCompress = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -51,15 +51,15 @@
             this.groupExtract.SuspendLayout();
             this.SuspendLayout();
             // 
-            // btnOpenFile
+            // btnExtract
             // 
-            this.btnOpenFile.Location = new System.Drawing.Point(134, 14);
-            this.btnOpenFile.Name = "btnOpenFile";
-            this.btnOpenFile.Size = new System.Drawing.Size(77, 23);
-            this.btnOpenFile.TabIndex = 0;
-            this.btnOpenFile.Text = "Extract";
-            this.btnOpenFile.UseVisualStyleBackColor = true;
-            this.btnOpenFile.Click += new System.EventHandler(this.btnOpenFile_Click);
+            this.btnExtract.Location = new System.Drawing.Point(134, 14);
+            this.btnExtract.Name = "btnExtract";
+            this.btnExtract.Size = new System.Drawing.Size(77, 23);
+            this.btnExtract.TabIndex = 0;
+            this.btnExtract.Text = "Extract";
+            this.btnExtract.UseVisualStyleBackColor = true;
+            this.btnExtract.Click += new System.EventHandler(this.btnExtract_Click);
             // 
             // txtResult
             // 
@@ -223,7 +223,7 @@
             // groupExtract
             // 
             this.groupExtract.Controls.Add(this.chkWriteTxt);
-            this.groupExtract.Controls.Add(this.btnOpenFile);
+            this.groupExtract.Controls.Add(this.btnExtract);
             this.groupExtract.Location = new System.Drawing.Point(98, 5);
             this.groupExtract.Name = "groupExtract";
             this.groupExtract.Size = new System.Drawing.Size(228, 48);
@@ -269,7 +269,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Button btnOpenFile;
+        private System.Windows.Forms.Button btnExtract;
         private System.Windows.Forms.RichTextBox txtResult;
         private System.Windows.Forms.Button btnCompress;
         private System.Windows.Forms.Label label1;
