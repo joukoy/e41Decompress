@@ -97,6 +97,21 @@ namespace e41Decompress
                 }
             }
         }
+        public static string ReadTextFile(string fileName)
+        {
+            StreamReader sr = new StreamReader(fileName);
+            string fileContent = sr.ReadToEnd();
+            sr.Close();
+            return fileContent;
+        }
+        public static void WriteTextFile(string fileName, string fileContent, bool append = false)
+        {
+            using (StreamWriter writetext = new StreamWriter(fileName, append))
+            {
+                writetext.Write(fileContent);
+            }
+        }
+
         public static uint BEToUint32(byte[] buf, uint offset)
         {
             //Shift first byte 24 bits left, second 16bits left...

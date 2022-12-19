@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.btnOpenFile = new System.Windows.Forms.Button();
-            this.btnSaveFile = new System.Windows.Forms.Button();
             this.txtResult = new System.Windows.Forms.RichTextBox();
             this.btnCompress = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -44,30 +43,23 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.label2 = new System.Windows.Forms.Label();
             this.btnAbout = new System.Windows.Forms.Button();
-            this.chkLzma = new System.Windows.Forms.CheckBox();
+            this.btnReadFile = new System.Windows.Forms.Button();
+            this.groupExtract = new System.Windows.Forms.GroupBox();
+            this.chkWriteTxt = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.groupExtract.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnOpenFile
             // 
-            this.btnOpenFile.Location = new System.Drawing.Point(11, 6);
+            this.btnOpenFile.Location = new System.Drawing.Point(134, 14);
             this.btnOpenFile.Name = "btnOpenFile";
             this.btnOpenFile.Size = new System.Drawing.Size(77, 23);
             this.btnOpenFile.TabIndex = 0;
             this.btnOpenFile.Text = "Extract";
             this.btnOpenFile.UseVisualStyleBackColor = true;
             this.btnOpenFile.Click += new System.EventHandler(this.btnOpenFile_Click);
-            // 
-            // btnSaveFile
-            // 
-            this.btnSaveFile.Location = new System.Drawing.Point(568, 6);
-            this.btnSaveFile.Name = "btnSaveFile";
-            this.btnSaveFile.Size = new System.Drawing.Size(73, 23);
-            this.btnSaveFile.TabIndex = 1;
-            this.btnSaveFile.Text = "Save bin";
-            this.btnSaveFile.UseVisualStyleBackColor = true;
-            this.btnSaveFile.Click += new System.EventHandler(this.btnSaveFile_Click);
             // 
             // txtResult
             // 
@@ -77,13 +69,13 @@
             this.txtResult.HideSelection = false;
             this.txtResult.Location = new System.Drawing.Point(1, 100);
             this.txtResult.Name = "txtResult";
-            this.txtResult.Size = new System.Drawing.Size(644, 349);
+            this.txtResult.Size = new System.Drawing.Size(721, 349);
             this.txtResult.TabIndex = 2;
             this.txtResult.Text = "";
             // 
             // btnCompress
             // 
-            this.btnCompress.Location = new System.Drawing.Point(94, 6);
+            this.btnCompress.Location = new System.Drawing.Point(290, 19);
             this.btnCompress.Name = "btnCompress";
             this.btnCompress.Size = new System.Drawing.Size(72, 23);
             this.btnCompress.TabIndex = 3;
@@ -105,22 +97,23 @@
             this.groupBox1.Controls.Add(this.radioType2);
             this.groupBox1.Controls.Add(this.radioType3);
             this.groupBox1.Controls.Add(this.radioType1);
-            this.groupBox1.Location = new System.Drawing.Point(297, 0);
+            this.groupBox1.Controls.Add(this.btnCompress);
+            this.groupBox1.Location = new System.Drawing.Point(332, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(265, 42);
+            this.groupBox1.Size = new System.Drawing.Size(377, 54);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Save with header";
+            this.groupBox1.Text = "Compress as";
             // 
             // radioType4
             // 
             this.radioType4.AutoSize = true;
             this.radioType4.Location = new System.Drawing.Point(191, 19);
             this.radioType4.Name = "radioType4";
-            this.radioType4.Size = new System.Drawing.Size(55, 17);
+            this.radioType4.Size = new System.Drawing.Size(93, 17);
             this.radioType4.TabIndex = 3;
             this.radioType4.TabStop = true;
-            this.radioType4.Text = "Type4";
+            this.radioType4.Text = "Type4 (LZMA)";
             this.radioType4.UseVisualStyleBackColor = true;
             // 
             // radioType2
@@ -158,7 +151,7 @@
             // 
             // btnMultiCompress
             // 
-            this.btnMultiCompress.Location = new System.Drawing.Point(436, 11);
+            this.btnMultiCompress.Location = new System.Drawing.Point(394, 11);
             this.btnMultiCompress.Name = "btnMultiCompress";
             this.btnMultiCompress.Size = new System.Drawing.Size(119, 23);
             this.btnMultiCompress.TabIndex = 6;
@@ -168,7 +161,7 @@
             // 
             // btnMultiExtract
             // 
-            this.btnMultiExtract.Location = new System.Drawing.Point(286, 11);
+            this.btnMultiExtract.Location = new System.Drawing.Point(255, 12);
             this.btnMultiExtract.Name = "btnMultiExtract";
             this.btnMultiExtract.Size = new System.Drawing.Size(133, 23);
             this.btnMultiExtract.TabIndex = 7;
@@ -193,7 +186,7 @@
             this.groupBox2.Controls.Add(this.txtExtension);
             this.groupBox2.Location = new System.Drawing.Point(7, 54);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(555, 43);
+            this.groupBox2.Size = new System.Drawing.Size(702, 43);
             this.groupBox2.TabIndex = 9;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Multiple files";
@@ -209,7 +202,7 @@
             // 
             // btnAbout
             // 
-            this.btnAbout.Location = new System.Drawing.Point(194, 6);
+            this.btnAbout.Location = new System.Drawing.Point(7, 31);
             this.btnAbout.Name = "btnAbout";
             this.btnAbout.Size = new System.Drawing.Size(75, 23);
             this.btnAbout.TabIndex = 10;
@@ -217,29 +210,50 @@
             this.btnAbout.UseVisualStyleBackColor = true;
             this.btnAbout.Click += new System.EventHandler(this.btnAbout_Click);
             // 
-            // chkLzma
+            // btnReadFile
             // 
-            this.chkLzma.AutoSize = true;
-            this.chkLzma.Location = new System.Drawing.Point(94, 35);
-            this.chkLzma.Name = "chkLzma";
-            this.chkLzma.Size = new System.Drawing.Size(94, 17);
-            this.chkLzma.TabIndex = 11;
-            this.chkLzma.Text = "LZMA (Type4)";
-            this.chkLzma.UseVisualStyleBackColor = true;
+            this.btnReadFile.Location = new System.Drawing.Point(7, 6);
+            this.btnReadFile.Name = "btnReadFile";
+            this.btnReadFile.Size = new System.Drawing.Size(75, 23);
+            this.btnReadFile.TabIndex = 12;
+            this.btnReadFile.Text = "Read file";
+            this.btnReadFile.UseVisualStyleBackColor = true;
+            this.btnReadFile.Click += new System.EventHandler(this.btnReadFile_Click);
+            // 
+            // groupExtract
+            // 
+            this.groupExtract.Controls.Add(this.chkWriteTxt);
+            this.groupExtract.Controls.Add(this.btnOpenFile);
+            this.groupExtract.Location = new System.Drawing.Point(98, 5);
+            this.groupExtract.Name = "groupExtract";
+            this.groupExtract.Size = new System.Drawing.Size(228, 48);
+            this.groupExtract.TabIndex = 13;
+            this.groupExtract.TabStop = false;
+            this.groupExtract.Text = "Extract";
+            // 
+            // chkWriteTxt
+            // 
+            this.chkWriteTxt.AutoSize = true;
+            this.chkWriteTxt.Checked = true;
+            this.chkWriteTxt.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkWriteTxt.Location = new System.Drawing.Point(12, 22);
+            this.chkWriteTxt.Name = "chkWriteTxt";
+            this.chkWriteTxt.Size = new System.Drawing.Size(103, 17);
+            this.chkWriteTxt.TabIndex = 1;
+            this.chkWriteTxt.Text = "Write type to .txt";
+            this.chkWriteTxt.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(646, 450);
-            this.Controls.Add(this.chkLzma);
+            this.ClientSize = new System.Drawing.Size(723, 450);
+            this.Controls.Add(this.groupExtract);
+            this.Controls.Add(this.btnReadFile);
             this.Controls.Add(this.btnAbout);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.btnCompress);
             this.Controls.Add(this.txtResult);
-            this.Controls.Add(this.btnSaveFile);
-            this.Controls.Add(this.btnOpenFile);
             this.Name = "Form1";
             this.Text = "(De)Compress";
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -247,15 +261,15 @@
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.groupExtract.ResumeLayout(false);
+            this.groupExtract.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
 
         private System.Windows.Forms.Button btnOpenFile;
-        private System.Windows.Forms.Button btnSaveFile;
         private System.Windows.Forms.RichTextBox txtResult;
         private System.Windows.Forms.Button btnCompress;
         private System.Windows.Forms.Label label1;
@@ -269,8 +283,10 @@
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button btnAbout;
-        private System.Windows.Forms.CheckBox chkLzma;
         private System.Windows.Forms.RadioButton radioType4;
+        private System.Windows.Forms.Button btnReadFile;
+        private System.Windows.Forms.GroupBox groupExtract;
+        private System.Windows.Forms.CheckBox chkWriteTxt;
     }
 }
 

@@ -24,6 +24,7 @@ namespace e41Decompress
         List<byte> newBuf;
         uint fsize;
         bool compression = false;
+        string filetype = "";
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -34,17 +35,14 @@ namespace e41Decompress
         {
             try
             {
-                string fName = SelectFile();
-                if (fName.Length == 0)
-                    return;
-                fsize = (uint)new FileInfo(fName).Length;
-                Logger("Reading file: " + fName, false);
-                buf = ReadBin(fName, 0, fsize);
-                Logger(" [OK]");
-                //Logger("File Type: " + buf[0].ToString("X2") + buf[1].ToString("X2"));
                 Logger("Uncompressing...");
+                compression = false;
                 uncompress();
                 Logger("[OK]");
+                string fName = SelectSaveFile();
+                if (fName.Length == 0)
+                    return;
+                saveBin(fName);
             }
             catch (Exception ex)
             {
@@ -54,7 +52,7 @@ namespace e41Decompress
 
         private void compress()
         {
-            if (chkLzma.Checked)
+            if (radioType4.Checked)
             {
                 //byte[] tmpBuf = new byte[buf.Length - 20];
                 //Array.Copy(buf, 0, tmpBuf, 20, tmpBuf.Length);
@@ -196,21 +194,25 @@ namespace e41Decompress
             uint addr = 20;
             if (buf[0] == 0xFF && buf[1] == 0xFF && buf[2] == 0xFF && buf[3] == 0xFF)
             {
+                filetype = "type1";
                 addr = 12;
                 Logger("Type 1");
             }
             else if (buf[0] == 0x04 && buf[1] == 0x01 && buf[4] == 0)
             {
+                filetype = "type2";
                 addr = 8;
                 Logger("Type 2");
             }
             else if (buf[0] == 0x04 && buf[1] == 0x01 && buf[4] == 0xFF)
             {
+                filetype = "type3";
                 addr = 20;
                 Logger("Type 3");
             }
             else if (buf[0] == 0x04 && buf[1] == 0x02)
             {
+                filetype = "type4";
                 Logger("Type 4 (LZMA)");
                 byte[] tmpBuf = new byte[buf.Length - 20];
                 Array.Copy(buf, 20, tmpBuf, 0, tmpBuf.Length);
@@ -316,7 +318,7 @@ namespace e41Decompress
                         headersize = header1Type4.Length + 4 + header2Type4.Length + 4;
 
                     writeBuf = new byte[newBuf.Count + headersize];
-                    if (radioType1.Checked || radioType3.Checked)
+                    if (radioType1.Checked)
                     {
                         Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
                         offset += headerType1.Length;
@@ -338,6 +340,10 @@ namespace e41Decompress
                         offset = headerType3.Length;
                         Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
                         offset += 4;
+                        Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
+                        offset += headerType1.Length;
+                        Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
+                        offset += 4;
                     }
                     else if (radioType4.Checked)
                     {
@@ -357,6 +363,13 @@ namespace e41Decompress
                 Array.Copy(newBuf.ToArray(), 0, writeBuf, offset, newBuf.Count);
                 WriteBinToFile(fName, writeBuf);
                 Logger(" [OK]");
+                if (!compression && chkWriteTxt.Checked)
+                {
+                    string txtFile = Path.Combine(Path.GetDirectoryName(fName), Path.GetFileNameWithoutExtension(fName) + ".txt");
+                    Logger("Writing type to file: " + txtFile + "...", false);
+                    WriteTextFile(txtFile, filetype);
+                    Logger(" [OK]");
+                }
             }
             catch (Exception ex)
             {
@@ -376,17 +389,15 @@ namespace e41Decompress
         {
             try
             {
-                string fName = SelectFile();
-                if (fName.Length == 0)
-                    return;
-                compression = true;
-                fsize = (uint)new FileInfo(fName).Length;
-                Logger("Reading file: " + fName, false);
-                buf = ReadBin(fName, 0, fsize);
                 Logger(" [OK]");
                 Logger("Compressing...");
+                compression = true;
                 compress();
                 Logger("[OK]");
+                string fName = SelectSaveFile();
+                if (fName.Length == 0)
+                    return;
+                saveBin(fName);
             }
             catch (Exception ex)
             {
@@ -477,7 +488,7 @@ namespace e41Decompress
             int dictionary = 4096; //-d12 = 2^12, default: 128 * 1024;
             bool eos = false;
 
-            CoderPropID[] propIDs =
+/*            CoderPropID[] propIDs =
                     {
                     CoderPropID.DictionarySize,
                     CoderPropID.PosStateBits,
@@ -485,7 +496,7 @@ namespace e41Decompress
                     CoderPropID.LitPosBits,
                     CoderPropID.NumFastBytes,
                     CoderPropID.MatchFinder,
-                    CoderPropID.EndMarker
+                    CoderPropID.EndMarker                    
                 };
 
             object[] properties =
@@ -497,6 +508,18 @@ namespace e41Decompress
                     (System.Int32)32, //fb32
                     "BT4",
                     eos
+                };
+*/
+            CoderPropID[] propIDs =
+            {
+                    CoderPropID.DictionarySize,
+                    CoderPropID.NumFastBytes
+                };
+
+            object[] properties =
+                    {
+                    (System.Int32)dictionary,
+                    (System.Int32)32
                 };
 
             SevenZip.Compression.LZMA.Encoder coder = new SevenZip.Compression.LZMA.Encoder();
@@ -538,6 +561,49 @@ namespace e41Decompress
                 coder.Code(input, output, input.Length, fileLength, null);
 
                 return output.ToArray();
+            }
+        }
+
+        private void btnReadFile_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string fName = SelectFile();
+                if (fName.Length == 0)
+                    return;
+                fsize = (uint)new FileInfo(fName).Length;
+                Logger("Reading file: " + fName, false);
+                buf = ReadBin(fName, 0, fsize);
+                Logger(" [OK]");
+                string txtFile = Path.Combine(Path.GetDirectoryName(fName), Path.GetFileNameWithoutExtension(fName) + ".txt");
+                if (File.Exists(txtFile))
+                {
+                    filetype = ReadTextFile(txtFile);
+                    if (filetype.Length > 4)
+                    {
+                        Logger("Reading type from file: " + txtFile + ": ", false);
+                        switch (filetype.ToLower().Substring(0, 5))
+                        {
+                            case "type1":
+                                radioType1.Checked = true;
+                                break;
+                            case "type2":
+                                radioType2.Checked = true;
+                                break;
+                            case "type3":
+                                radioType3.Checked = true;
+                                break;
+                            case "type4":
+                                radioType4.Checked = true;
+                                break;
+                        }
+                        Logger(filetype);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger(ex.Message);
             }
         }
     }
