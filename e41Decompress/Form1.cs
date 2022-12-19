@@ -544,7 +544,7 @@ namespace e41Decompress
                     return null;
                 }
                 process.StartInfo.FileName = lzmaexe;
-                process.StartInfo.Arguments = "e " + tmpFile1 + " " + tmpFile2 + " -d12 -fb32";
+                process.StartInfo.Arguments = "e \"" + tmpFile1 + "\" \"" + tmpFile2 + "\" -d12 -fb32";
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 //process.StartInfo.UseShellExecute = false;
 
