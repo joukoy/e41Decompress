@@ -35,9 +35,13 @@ namespace e41Decompress
 
         private void TestIntegrity(byte[] Original, byte[] UnCompressed)
         {
-            Logger("Testing integrity...");
+            Logger("Testing integrity...", false);
             Application.DoEvents();
+            if (Original == null || UnCompressed == null) 
+                return;
             byte[] compressed = compress(UnCompressed);
+            if (compressed == null)
+                return;
             byte[] cmpBuf = AddHeader(compressed);
 
             if (Original.SequenceEqual(cmpBuf))
@@ -46,7 +50,7 @@ namespace e41Decompress
             }
             else
             {
-                LoggerBold("Warning! integrity test failed. Unknown compression method?");
+                LoggerBold(" Warning! integrity test failed. Unknown compression method?");
             }
         }
 
@@ -244,7 +248,7 @@ namespace e41Decompress
             }
             else
             {
-                Logger("Unsupprted file, type: " + inBuf[0].ToString("X2") + " " + inBuf[1].ToString("X2") + " " + inBuf[2].ToString("X2") + " " + inBuf[3].ToString("X2")); ;
+                LoggerBold(" Unsupprted file, type: " + inBuf[0].ToString("X2") + " " + inBuf[1].ToString("X2") + " " + inBuf[2].ToString("X2") + " " + inBuf[3].ToString("X2")); ;
                 return null;
             }
             List<byte> localBuf = new List<byte>();
@@ -692,6 +696,34 @@ namespace e41Decompress
             {
                 Logger(ex.Message);
             }
+        }
+
+        private void btnTestIntegrity_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                compression = true;
+                frmFileSelection frmF = new frmFileSelection();
+                frmF.btnOK.Text = "Test!";
+                frmF.LoadFiles(Application.StartupPath);
+                if (frmF.ShowDialog() != DialogResult.OK)
+                    return;
+                for (int i = 0; i < frmF.listFiles.CheckedItems.Count; i++)
+                {
+                    string fName = frmF.listFiles.CheckedItems[i].Tag.ToString();
+                    fsize = (uint)new FileInfo(fName).Length;
+                    Logger("File: " + fName+ ", ", false);
+                    buf = ReadBin(fName, 0, fsize);
+                    newBuf = uncompress(buf);
+                    TestIntegrity(buf, newBuf);
+                }
+                Logger("Done");
+            }
+            catch (Exception ex)
+            {
+                LoggerBold(ex.Message);
+            }
+
         }
     }
 }

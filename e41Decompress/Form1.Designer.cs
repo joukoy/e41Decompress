@@ -46,6 +46,7 @@
             this.btnReadFile = new System.Windows.Forms.Button();
             this.groupExtract = new System.Windows.Forms.GroupBox();
             this.chkWriteTxt = new System.Windows.Forms.CheckBox();
+            this.btnTestIntegrity = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupExtract.SuspendLayout();
@@ -179,6 +180,7 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.btnTestIntegrity);
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Controls.Add(this.btnMultiCompress);
@@ -243,6 +245,16 @@
             this.chkWriteTxt.Text = "Write type to .txt";
             this.chkWriteTxt.UseVisualStyleBackColor = true;
             // 
+            // btnTestIntegrity
+            // 
+            this.btnTestIntegrity.Location = new System.Drawing.Point(519, 11);
+            this.btnTestIntegrity.Name = "btnTestIntegrity";
+            this.btnTestIntegrity.Size = new System.Drawing.Size(119, 23);
+            this.btnTestIntegrity.TabIndex = 10;
+            this.btnTestIntegrity.Text = "Test integrity...";
+            this.btnTestIntegrity.UseVisualStyleBackColor = true;
+            this.btnTestIntegrity.Click += new System.EventHandler(this.btnTestIntegrity_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -287,6 +299,7 @@
         private System.Windows.Forms.Button btnReadFile;
         private System.Windows.Forms.GroupBox groupExtract;
         private System.Windows.Forms.CheckBox chkWriteTxt;
+        private System.Windows.Forms.Button btnTestIntegrity;
     }
 }
 

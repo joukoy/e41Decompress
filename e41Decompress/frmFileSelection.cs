@@ -52,7 +52,7 @@ namespace e41Decompress
             {
                 for (int f = 0; f < filters.Length; f++)
                 {
-                    if (file.Extension.ToLower() == filters[f].ToLower())
+                    if (file.Extension.ToLower() == filters[f].ToLower() || chkAllfiles.Checked)
                     {
                         var item = new ListViewItem(file.Name);
                         item.Tag = file.FullName;
@@ -145,6 +145,11 @@ namespace e41Decompress
                     listFiles.Items[i].Checked = false;
             }
 
+        }
+
+        private void chkAllfiles_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFiles(txtFolder.Text);
         }
     }
 }
