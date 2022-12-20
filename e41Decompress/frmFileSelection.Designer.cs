@@ -36,7 +36,7 @@ namespace e41Decompress
             this.txtFolder = new System.Windows.Forms.TextBox();
             this.chkSubfolders = new System.Windows.Forms.CheckBox();
             this.chkSelectAll = new System.Windows.Forms.CheckBox();
-            this.chkAllfiles = new System.Windows.Forms.CheckBox();
+            this.comboFileFilter = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // listFiles
@@ -105,23 +105,27 @@ namespace e41Decompress
             this.chkSelectAll.UseVisualStyleBackColor = true;
             this.chkSelectAll.CheckedChanged += new System.EventHandler(this.chkSelectAll_CheckedChanged);
             // 
-            // chkAllfiles
+            // comboFileFilter
             // 
-            this.chkAllfiles.AutoSize = true;
-            this.chkAllfiles.Location = new System.Drawing.Point(81, 54);
-            this.chkAllfiles.Name = "chkAllfiles";
-            this.chkAllfiles.Size = new System.Drawing.Size(78, 17);
-            this.chkAllfiles.TabIndex = 10;
-            this.chkAllfiles.Text = "All files (*.*)";
-            this.chkAllfiles.UseVisualStyleBackColor = true;
-            this.chkAllfiles.CheckedChanged += new System.EventHandler(this.chkAllfiles_CheckedChanged);
+            this.comboFileFilter.FormattingEnabled = true;
+            this.comboFileFilter.Items.AddRange(new object[] {
+            ".bin",
+            "*.*",
+            ".txt",
+            ".bin;.txt"});
+            this.comboFileFilter.Location = new System.Drawing.Point(91, 48);
+            this.comboFileFilter.Name = "comboFileFilter";
+            this.comboFileFilter.Size = new System.Drawing.Size(48, 21);
+            this.comboFileFilter.TabIndex = 10;
+            this.comboFileFilter.Text = ".bin";
+            this.comboFileFilter.SelectedIndexChanged += new System.EventHandler(this.comboFileFilter_SelectedIndexChanged);
             // 
             // frmFileSelection
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(779, 450);
-            this.Controls.Add(this.chkAllfiles);
+            this.Controls.Add(this.comboFileFilter);
             this.Controls.Add(this.chkSelectAll);
             this.Controls.Add(this.chkSubfolders);
             this.Controls.Add(this.txtFolder);
@@ -144,6 +148,6 @@ namespace e41Decompress
         public System.Windows.Forms.Button btnOK;
         private System.Windows.Forms.CheckBox chkSubfolders;
         private System.Windows.Forms.CheckBox chkSelectAll;
-        private System.Windows.Forms.CheckBox chkAllfiles;
+        private System.Windows.Forms.ComboBox comboFileFilter;
     }
 }

@@ -26,11 +26,19 @@ namespace e41Decompress
         byte[] newBuf;
         uint fsize;
         bool compression = false;
-        string filetype = "";
+
+        enum CompressionType
+        {
+            Type1,
+            Type2,
+            Type3,
+            Type4,
+            Type4B
+        }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            comboCompType.DataSource = Enum.GetValues(typeof(CompressionType));
         }
 
         private void TestIntegrity(byte[] Original, byte[] UnCompressed)
@@ -78,7 +86,7 @@ namespace e41Decompress
 
         private byte[] compress(byte[] inBuf)
         {
-            if (radioType4.Checked)
+            if (comboCompType.Text.StartsWith("Type4"))
             {
                 return CompressLZMA(inBuf);
             }
@@ -218,29 +226,28 @@ namespace e41Decompress
             uint addr = 20;
             if (inBuf[0] == 0xFF && inBuf[1] == 0xFF && inBuf[2] == 0xFF && inBuf[3] == 0xFF)
             {
-                radioType1.Checked = true;
-                filetype = "type1";
+                comboCompType.SelectedIndex = (int)CompressionType.Type1;
                 addr = 12;
                 Logger("Type 1");
             }
             else if (inBuf[0] == 0x04 && inBuf[1] == 0x01 && inBuf[4] == 0)
             {
-                radioType2.Checked = true;
-                filetype = "type2";
+                comboCompType.SelectedIndex = (int)CompressionType.Type2;
                 addr = 8;
                 Logger("Type 2");
             }
             else if (inBuf[0] == 0x04 && inBuf[1] == 0x01 && inBuf[4] == 0xFF)
             {
-                radioType3.Checked = true;
-                filetype = "type3";
+                comboCompType.SelectedIndex = (int)CompressionType.Type3;
                 addr = 20;
                 Logger("Type 3");
             }
             else if (inBuf[0] == 0x04 && inBuf[1] == 0x02)
             {
-                radioType4.Checked = true;
-                filetype = "type4";
+                if (inBuf[22] == 0x40)
+                    comboCompType.SelectedIndex = (int)CompressionType.Type4B;
+                else
+                    comboCompType.SelectedIndex = (int)CompressionType.Type4;
                 Logger("Type 4 (LZMA)");
                 byte[] tmpBuf = new byte[inBuf.Length - 20];
                 Array.Copy(inBuf, 20, tmpBuf, 0, tmpBuf.Length);
@@ -322,7 +329,7 @@ namespace e41Decompress
             {
                 if (inBuf == null)
                     return null;
-                byte[] writeBuf;
+                byte[] writeBuf = null;
                 int offset = 0;
 
                 byte[] headerType1 = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00 };
@@ -336,24 +343,19 @@ namespace e41Decompress
                 byte[] bytesFollow2 = BitConverter.GetBytes((uint)(inBuf.Length));
                 Array.Reverse(bytesFollow2, 0, 4);
 
-                int headersize = headerType1.Length + 4;
-                if (radioType2.Checked)
-                    headersize = headerType2.Length + 4;
-                else if (radioType3.Checked)
-                    headersize = headersize + headerType3.Length + 4;
-                else if (radioType4.Checked)
-                    headersize = header1Type4.Length + 4 + header2Type4.Length + 4;
-
-                writeBuf = new byte[inBuf.Length + headersize];
-                if (radioType1.Checked)
+                if (comboCompType.Text == CompressionType.Type1.ToString())
                 {
+                    int headersize = headerType1.Length + 4;
+                    writeBuf = new byte[inBuf.Length + headersize];
                     Array.Copy(headerType1, 0, writeBuf, offset, headerType1.Length);
                     offset += headerType1.Length;
                     Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
                     offset += 4;
                 }
-                else if (radioType2.Checked)
+                else if (comboCompType.Text == CompressionType.Type2.ToString())
                 {
+                    int headersize = headerType2.Length + 4;
+                    writeBuf = new byte[inBuf.Length + headersize];
                     offset = 0;
                     Array.Copy(headerType2, 0, writeBuf, offset, headerType2.Length);
                     offset += headerType2.Length;
@@ -361,8 +363,10 @@ namespace e41Decompress
                     offset += 4;
 
                 }
-                else if (radioType3.Checked)
+                else if (comboCompType.Text == CompressionType.Type3.ToString())
                 {
+                    int headersize = headerType1.Length + 4 + headerType3.Length + 4;
+                    writeBuf = new byte[inBuf.Length + headersize];
                     Array.Copy(headerType3, 0, writeBuf, 0, headerType3.Length);
                     offset = headerType3.Length;
                     Array.Copy(bytesFollow1, 0, writeBuf, offset, 4);
@@ -372,8 +376,10 @@ namespace e41Decompress
                     Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
                     offset += 4;
                 }
-                else if (radioType4.Checked)
+                else if (comboCompType.Text.StartsWith(CompressionType.Type4.ToString()))
                 {
+                    int headersize = header1Type4.Length + 4 + header2Type4.Length + 4;
+                    writeBuf = new byte[inBuf.Length + headersize];
                     offset = 0;
                     Array.Copy(header1Type4, 0, writeBuf, offset, header1Type4.Length);
                     offset += header1Type4.Length;
@@ -383,6 +389,11 @@ namespace e41Decompress
                     offset += header2Type4.Length;
                     Array.Copy(bytesFollow2, 0, writeBuf, offset, 4);
                     offset += 4;
+                }
+                else
+                {
+                    LoggerBold("Unknown compression type");
+                    return null;
                 }
                 Array.Copy(inBuf, 0, writeBuf, offset, inBuf.Length);
                 return writeBuf;
@@ -416,7 +427,7 @@ namespace e41Decompress
                 {
                     string txtFile = Path.Combine(Path.GetDirectoryName(fName), Path.GetFileNameWithoutExtension(fName) + ".txt");
                     Logger("Writing type to file: " + txtFile + "...", false);
-                    WriteTextFile(txtFile, filetype);
+                    WriteTextFile(txtFile, comboCompType.Text);
                     Logger(" [OK]");
                 }
             }
@@ -536,6 +547,9 @@ namespace e41Decompress
         {
             try
             {
+                string compParams = "-d12 -fb32";
+                if (comboCompType.Text == "Type4B")
+                    compParams = "-d14 -fb32";
                 string tmpFile1 = Path.Combine(Path.GetTempPath(), "e41decompress-lzma1.tmp");
                 string tmpFile2 = Path.Combine(Path.GetTempPath(), "e41decompress-lzma2.tmp");
                 WriteBinToFile(tmpFile1, toCompress);
@@ -548,7 +562,7 @@ namespace e41Decompress
                     return null;
                 }
                 process.StartInfo.FileName = lzmaexe;
-                process.StartInfo.Arguments = "e \"" + tmpFile1 + "\" \"" + tmpFile2 + "\" -d12 -fb32";
+                process.StartInfo.Arguments = "e \"" + tmpFile1 + "\" \"" + tmpFile2 + "\" "+ compParams;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 //process.StartInfo.UseShellExecute = false;
 
@@ -669,26 +683,15 @@ namespace e41Decompress
                 string txtFile = Path.Combine(Path.GetDirectoryName(fName), Path.GetFileNameWithoutExtension(fName) + ".txt");
                 if (File.Exists(txtFile))
                 {
-                    filetype = ReadTextFile(txtFile);
+                    string filetype = ReadTextFile(txtFile);
                     if (filetype.Length > 4)
                     {
-                        Logger("Reading type from file: " + txtFile + ": ", false);
-                        switch (filetype.ToLower().Substring(0, 5))
+                        if (Enum.TryParse(filetype, out CompressionType comptype))
                         {
-                            case "type1":
-                                radioType1.Checked = true;
-                                break;
-                            case "type2":
-                                radioType2.Checked = true;
-                                break;
-                            case "type3":
-                                radioType3.Checked = true;
-                                break;
-                            case "type4":
-                                radioType4.Checked = true;
-                                break;
+                            Logger("Reading type from file: " + txtFile + ": ", false);
+                            comboCompType.SelectedIndex = (int)comptype;
+                            Logger(filetype);
                         }
-                        Logger(filetype);
                     }
                 }
             }
@@ -712,7 +715,7 @@ namespace e41Decompress
                 {
                     string fName = frmF.listFiles.CheckedItems[i].Tag.ToString();
                     fsize = (uint)new FileInfo(fName).Length;
-                    Logger("File: " + fName+ ", ", false);
+                    Logger("File: " + fName +" ", false);
                     buf = ReadBin(fName, 0, fsize);
                     newBuf = uncompress(buf);
                     TestIntegrity(buf, newBuf);

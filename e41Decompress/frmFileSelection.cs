@@ -45,21 +45,19 @@ namespace e41Decompress
             else
                 Files = d.GetFiles("*.*");
 
-            string[] filters;
-            filters = new string[1];
-            filters[0] = filter;
+            string[] filters = comboFileFilter.Text.Split(';');
             foreach (FileInfo file in Files)
             {
-                for (int f = 0; f < filters.Length; f++)
+                foreach (string filter in filters)
                 {
-                    if (file.Extension.ToLower() == filters[f].ToLower() || chkAllfiles.Checked)
+                    if (comboFileFilter.Text == "*.*" | file.Extension.ToLower() == filter.ToLower())
                     {
                         var item = new ListViewItem(file.Name);
                         item.Tag = file.FullName;
                         item.SubItems.Add(file.DirectoryName);
                         string filesize = file.Length.ToString();
                         //if (file.Length > 1023)
-                          //  filesize = ((int)(file.Length / 1024)).ToString() + " k";
+                        //  filesize = ((int)(file.Length / 1024)).ToString() + " k";
                         item.SubItems.Add(filesize);
                         listFiles.Items.Add(item);
                         break;
@@ -147,7 +145,7 @@ namespace e41Decompress
 
         }
 
-        private void chkAllfiles_CheckedChanged(object sender, EventArgs e)
+        private void comboFileFilter_SelectedIndexChanged(object sender, EventArgs e)
         {
             LoadFiles(txtFolder.Text);
         }
